@@ -1,8 +1,8 @@
-import log from 'loglevel';
-import { monitorFrequency, VideoSenderStats } from '../stats';
-import { Track } from './Track';
-import { restartTrack, setTrackMuted } from './utils';
-import { VideoTrack } from './VideoTrack';
+import log from 'loglevel'
+import { monitorFrequency, VideoSenderStats } from '../stats'
+import { Track } from './Track'
+import { restartTrack, setTrackMuted } from './utils'
+import { VideoTrack } from './VideoTrack'
 
 const ridOrder = ['f', 'h', 'q'];
 

@@ -1,5 +1,5 @@
-import log from 'loglevel';
-import { WSSignalClient } from './api/SignalClient';
+import log from 'loglevel'
+import { WSSignalClient } from './api/SignalClient'
 import {
   ConnectOptions,
   CreateAudioTrackOptions,
@@ -7,16 +7,16 @@ import {
   CreateLocalTracksOptions,
   CreateVideoTrackOptions,
   LogLevel,
-  VideoPresets,
-} from './options';
-import { TrackInvalidError } from './room/errors';
-import Room from './room/Room';
-import { LocalAudioTrack } from './room/track/LocalAudioTrack';
-import { LocalVideoTrack } from './room/track/LocalVideoTrack';
-import { TrackPublishOptions } from './room/track/options';
-import { Track } from './room/track/Track';
-import { LocalTrack } from './room/track/types';
-export { version } from './version';
+  VideoPresets
+} from './options'
+import { TrackInvalidError } from './room/errors'
+import Room from './room/Room'
+import { LocalAudioTrack } from './room/track/LocalAudioTrack'
+import { LocalVideoTrack } from './room/track/LocalVideoTrack'
+import { TrackPublishOptions } from './room/track/options'
+import { Track } from './room/track/Track'
+import { LocalTrack } from './room/track/types'
+export { version } from './version'
 
 /**
  * Connects to a LiveKit room
@@ -142,6 +142,7 @@ export async function createLocalTracks(
     {},
     VideoPresets.qhd.resolution
   );
+
   if (typeof options.video === 'object' && options.video) {
     Object.assign(videoOptions, options.video);
     if (options.video.resolution) {
@@ -152,7 +153,6 @@ export async function createLocalTracks(
   if (options.video === false) {
     constraints.video = false;
   } else {
-    // use defaults
     constraints.video = videoOptions;
   }
   log.debug('video constraints', constraints.video);
@@ -166,7 +166,9 @@ export async function createLocalTracks(
     if (typeof trackOptions === 'boolean' || !trackOptions) {
       trackOptions = {};
     }
-    tracks.push(createLocalTrack(mediaStreamTrack, trackOptions));
+    const localTrack = createLocalTrack(mediaStreamTrack, trackOptions)
+    localTrack.stream = stream
+    tracks.push(localTrack);
   });
 
   return tracks;

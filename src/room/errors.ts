@@ -31,3 +31,9 @@ export class PublishDataError extends LivekitError {
     super(13, message || 'Unable to publish data');
   }
 }
+
+export class TrackPublishError extends LivekitError {
+  constructor(message?: string) {
+    super(14, message || 'Error while publishing track');
+  }
+}

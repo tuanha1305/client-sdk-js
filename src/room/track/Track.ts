@@ -1,5 +1,5 @@
-import { EventEmitter } from 'events';
-import { TrackType } from '../../proto/livekit_models';
+import { EventEmitter } from 'events'
+import { TrackType } from '../../proto/livekit_models'
 
 export class Track extends EventEmitter {
   kind: Track.Kind;
@@ -9,10 +9,22 @@ export class Track extends EventEmitter {
    */
   sid?: Track.SID;
 
+  /** @internal */
+  // used by react-native
+  stream?: MediaStream
+
   protected constructor(kind: Track.Kind, name?: string) {
     super();
     this.kind = kind;
     this.name = name || '';
+  }
+
+  streamURL(): string {
+    if (this.stream && 'toURL' in this.stream) {
+      // @ts-ignore
+      return this.stream.toURL()
+    }
+    return ''
   }
 }
 

@@ -1,26 +1,27 @@
-import log from 'loglevel';
+import log from 'loglevel'
 import {
   AudioPresets,
   VideoCodec,
   VideoEncoding,
-  VideoPresets,
-} from '../../options';
-import { ParticipantInfo } from '../../proto/livekit_models';
-import { DataPacket, DataPacket_Kind } from '../../proto/livekit_rtc';
+  VideoPresets
+} from '../../options'
+import { ParticipantInfo } from '../../proto/livekit_models'
+import { DataPacket, DataPacket_Kind } from '../../proto/livekit_rtc'
 import {
   PublishDataError,
   TrackInvalidError,
-  UnexpectedConnectionState,
-} from '../errors';
-import { ParticipantEvent, TrackEvent } from '../events';
-import { RTCEngine } from '../RTCEngine';
-import { LocalAudioTrack } from '../track/LocalAudioTrack';
-import { LocalTrackPublication } from '../track/LocalTrackPublication';
-import { LocalVideoTrack } from '../track/LocalVideoTrack';
-import { TrackPublishOptions } from '../track/options';
-import { Track } from '../track/Track';
-import { LocalTrack } from '../track/types';
-import { Participant } from './Participant';
+  TrackPublishError,
+  UnexpectedConnectionState
+} from '../errors'
+import { ParticipantEvent, TrackEvent } from '../events'
+import { RTCEngine } from '../RTCEngine'
+import { LocalAudioTrack } from '../track/LocalAudioTrack'
+import { LocalTrackPublication } from '../track/LocalTrackPublication'
+import { LocalVideoTrack } from '../track/LocalVideoTrack'
+import { TrackPublishOptions } from '../track/options'
+import { Track } from '../track/Track'
+import { LocalTrack } from '../track/types'
+import { Participant } from './Participant'
 
 const simulcastMinWidth = 200;
 
@@ -90,43 +91,12 @@ export class LocalParticipant extends Participant {
     const ti = await this.engine.addTrack(cid, track.name, track.kind);
     const publication = new LocalTrackPublication(track.kind, ti, track);
 
-    let encodings: RTCRtpEncodingParameters[] | undefined = undefined;
-    // for video
-    if (track.kind === Track.Kind.Video) {
-      // TODO: support react native, which doesn't expose getSettings
-      const settings = track.mediaStreamTrack.getSettings();
-      encodings = this.computeVideoEncodings(
-        settings.width,
-        settings.height,
-        options
-      );
-    } else if (track.kind === Track.Kind.Audio) {
-      encodings = [
-        {
-          maxBitrate: options?.audioBitrate || AudioPresets.speech.maxBitrate,
-        },
-      ];
+    if (this.engine.useLegacy) {
+      this.addTrackWithStream(track, options)
+    } else {
+      this.addTrackWithTransceiver(track, options)
     }
 
-    if (!this.engine.publisher) {
-      throw new UnexpectedConnectionState('publisher is closed');
-    }
-    log.debug('publishing with encodings', encodings);
-    const transceiver = this.engine.publisher.pc.addTransceiver(
-      track.mediaStreamTrack,
-      {
-        direction: 'sendonly',
-        sendEncodings: encodings,
-      }
-    );
-
-    // store RTPSender
-    track.sender = transceiver.sender;
-    if (track instanceof LocalVideoTrack) {
-      track.startMonitor();
-    }
-
-    this.setPreferredCodec(transceiver, track.kind, options?.videoCodec);
     this.addTrackPublication(publication);
 
     // send event for publication
@@ -141,8 +111,6 @@ export class LocalParticipant extends Participant {
     let publication = this.getPublicationForTrack(track);
 
     log.debug('unpublishTrack', 'unpublishing track', track);
-
-    // TODO: add logging
 
     if (!publication) {
       log.warn(
@@ -278,6 +246,65 @@ export class LocalParticipant extends Participant {
 
     this.engine.updateMuteStatus(track.sid, muted);
   };
+
+  /**
+   * Adds track to engine with newer Transceiver API
+   * @param track
+   * @param options
+   */
+  private addTrackWithTransceiver(track: LocalTrack, options?: TrackPublishOptions) {
+    if (!this.engine.publisher) {
+      throw new UnexpectedConnectionState('publisher is closed');
+    }
+
+    let encodings: RTCRtpEncodingParameters[] | undefined = undefined;
+    // for video
+    if (track.kind === Track.Kind.Video) {
+      // TODO: support react native, which doesn't expose getSettings
+      const settings = track.mediaStreamTrack.getSettings();
+      encodings = this.computeVideoEncodings(
+        settings.width,
+        settings.height,
+        options
+      );
+    } else if (track.kind === Track.Kind.Audio) {
+      encodings = [
+        {
+          maxBitrate: options?.audioBitrate || AudioPresets.speech.maxBitrate,
+        },
+      ];
+    }
+
+    log.debug('publishing with encodings', encodings);
+    const transceiver = this.engine.publisher.pc.addTransceiver(
+      track.mediaStreamTrack,
+      {
+        direction: 'sendonly',
+        sendEncodings: encodings,
+      }
+    );
+
+    // store RTPSender
+    track.sender = transceiver.sender;
+    if (track instanceof LocalVideoTrack) {
+      track.startMonitor();
+    }
+    this.setPreferredCodec(transceiver, track.kind, options?.videoCodec);
+  }
+
+  private addTrackWithStream(track: LocalTrack, options?: TrackPublishOptions) {
+    if (!this.engine.publisher) {
+      throw new UnexpectedConnectionState('publisher is closed');
+    }
+    let pc = this.engine.publisher.pc
+    if ('addStream' in pc) {
+      // @ts-ignore
+      pc.addStream(track.stream!)
+      console.log('added stream: ', track.stream)
+    } else {
+      throw new TrackPublishError();
+    }
+  }
 
   private getPublicationForTrack(
     track: LocalTrack | MediaStreamTrack

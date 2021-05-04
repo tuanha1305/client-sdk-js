@@ -1,18 +1,18 @@
-import { EventEmitter } from 'events';
-import log from 'loglevel';
-import { SignalClient } from '../api/SignalClient';
-import { TrackInfo } from '../proto/livekit_models';
+import { EventEmitter } from 'events'
+import log from 'loglevel'
+import { SignalClient } from '../api/SignalClient'
+import { TrackInfo } from '../proto/livekit_models'
 import {
   DataPacket,
   JoinResponse,
   SignalTarget,
-  TrackPublishedResponse,
-} from '../proto/livekit_rtc';
-import { TrackInvalidError } from './errors';
-import { EngineEvent } from './events';
-import { PCTransport } from './PCTransport';
-import { Track } from './track/Track';
-import { useLegacyAPI } from './utils';
+  TrackPublishedResponse
+} from '../proto/livekit_rtc'
+import { TrackInvalidError } from './errors'
+import { EngineEvent } from './events'
+import { PCTransport } from './PCTransport'
+import { Track } from './track/Track'
+import { useLegacyAPI } from './utils'
 
 const lossyDataChannel = '_lossy';
 const reliableDataChannel = '_reliable';
@@ -160,7 +160,7 @@ export class RTCEngine extends EventEmitter {
         // We'll trigger disconnect after a long delay if we are in the waiting-for-server-answer
         // state
         const delay =
-          this.publisher.pc.signalingState == 'have-local-offer' ? 3000 : 100;
+          this.publisher.pc.signalingState == 'have-local-offer' ? 3000 : 1000;
         this.disconnectTimeout = setTimeout(() => {
           this.disconnectTimeout = undefined;
           this.iceConnected = false;
