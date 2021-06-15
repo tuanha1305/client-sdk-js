@@ -1,6 +1,6 @@
 import log from 'loglevel';
 import 'webrtc-adapter';
-import { ParticipantInfo, TrackType } from '../proto/livekit_models';
+import { ParticipantInfo, SubscribedTrack, TrackType } from '../proto/livekit_models';
 import {
   JoinResponse,
   SessionDescription,
@@ -61,6 +61,8 @@ export interface SignalClient {
   onLocalTrackPublished?: (res: TrackPublishedResponse) => void;
   // when active speakers changed
   onActiveSpeakersChanged?: (res: SpeakerInfo[]) => void;
+  // when subscribed tracks have changed
+  onSubscriptionUpdate?: (tracks: SubscribedTrack[]) => void;
   onLeave?: () => void;
 }
 
@@ -85,6 +87,8 @@ export class WSSignalClient {
   onNegotiateRequested?: () => void;
 
   onActiveSpeakersChanged?: (res: SpeakerInfo[]) => void;
+
+  onSubscriptionUpdate?: (tracks: SubscribedTrack[]) => void;
 
   onLeave?: () => void;
 
@@ -293,6 +297,10 @@ export class WSSignalClient {
     } else if (msg.speaker) {
       if (this.onActiveSpeakersChanged) {
         this.onActiveSpeakersChanged(msg.speaker.speakers);
+      }
+    } else if (msg.subscription) {
+      if (this.onSubscriptionUpdate) {
+        this.onSubscriptionUpdate(msg.subscription.tracks);
       }
     } else if (msg.leave) {
       if (this.onLeave) {

@@ -107,6 +107,7 @@ export default class RemoteParticipant extends Participant {
     }
 
     publication.setTrack(track);
+    mediaTrack.enabled = true;
     // set track name etc
     track.name = publication.trackName;
     track.sid = publication.trackSid;
@@ -120,6 +121,22 @@ export default class RemoteParticipant extends Participant {
     this.emit(ParticipantEvent.TrackSubscribed, track, publication);
 
     return publication;
+  }
+
+  /** @internal */
+  removeSubscribedMediaTrack(sid: Track.SID) {
+    // remove track
+    const pub = this.tracks.get(sid);
+    if (!pub) {
+      return;
+    }
+
+    const { track } = pub;
+    pub.track = undefined;
+    if (track) {
+      track.mediaStreamTrack.enabled = false;
+    }
+    this.emit(ParticipantEvent.TrackUnsubscribed, track, pub);
   }
 
   /** @internal */
@@ -202,7 +219,9 @@ export default class RemoteParticipant extends Participant {
     // also send unsubscribe, if track is actively subscribed
     if (publication.track) {
       const { track } = publication;
-      track.stop();
+      if (track) {
+        track.mediaStreamTrack.enabled = false;
+      }
       publication.setTrack(undefined);
       // always send unsubscribed, since apps may rely on this
       this.emit(ParticipantEvent.TrackUnsubscribed, track, publication);

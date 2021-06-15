@@ -4,8 +4,10 @@ import { SignalClient, SignalOptions } from '../api/SignalClient';
 import {
   ParticipantInfo,
   ParticipantInfo_State,
+  SubscribedTrack,
 } from '../proto/livekit_models';
 import { DataPacket_Kind, SpeakerInfo, UserPacket } from '../proto/livekit_rtc';
+import { protocolSubscriptionMap } from '../version';
 import { ConnectionError, UnsupportedServer } from './errors';
 import { EngineEvent, ParticipantEvent, RoomEvent } from './events';
 import LocalParticipant from './participant/LocalParticipant';
@@ -22,6 +24,8 @@ export enum RoomState {
   Connected = 'connected',
   Reconnecting = 'reconnecting',
 }
+
+const maxSubscribeAttempts = 20;
 
 /**
  * In LiveKit, a room is the logical grouping for a list of participants.
@@ -56,10 +60,21 @@ class Room extends EventEmitter {
   /** the current participant */
   localParticipant!: LocalParticipant;
 
+  /** protocol that the client & server is using */
+  protocolVersion!: number;
+
+  /** version of the server */
+  serverVersion!: string;
+
+  private subscribedTracks: Map<string, SubscribedTrack>;
+
+  private subscriptionUpdateTimeout?: ReturnType<typeof setTimeout>;
+
   /** @internal */
   constructor(client: SignalClient, config?: RTCConfiguration) {
     super();
     this.participants = new Map();
+    this.subscribedTracks = new Map();
     this.engine = new RTCEngine(client, config);
 
     this.engine.on(
@@ -77,12 +92,9 @@ class Room extends EventEmitter {
       this.handleDisconnect();
     });
 
-    this.engine.on(
-      EngineEvent.ParticipantUpdate,
-      (participants: ParticipantInfo[]) => {
-        this.handleParticipantUpdates(participants);
-      },
-    );
+    this.engine.on(EngineEvent.ParticipantUpdate, this.handleParticipantUpdates);
+
+    this.engine.on(EngineEvent.SubscriptionUpdate, this.handleSubscriptionUpdate);
 
     this.engine.on(EngineEvent.SpeakersUpdate, this.handleSpeakerUpdate);
 
@@ -105,6 +117,8 @@ class Room extends EventEmitter {
         throw new UnsupportedServer('unknown server version');
       }
 
+      this.protocolVersion = joinResponse.protocolVersion;
+      this.serverVersion = joinResponse.serverVersion;
       this.state = RoomState.Connected;
       const pi = joinResponse.participant!;
       this.localParticipant = new LocalParticipant(
@@ -163,6 +177,11 @@ class Room extends EventEmitter {
     stream: MediaStream,
     receiver?: RTCRtpReceiver,
   ) {
+    if (this.protocolVersion >= protocolSubscriptionMap) {
+      // do nothing, and wait for explicit events
+      return;
+    }
+
     const parts = unpackStreamId(stream.id);
     const participantId = parts[0];
     let trackId = parts[1];
@@ -179,7 +198,7 @@ class Room extends EventEmitter {
     this.state = RoomState.Disconnected;
   }
 
-  private handleParticipantUpdates(participantInfos: ParticipantInfo[]) {
+  private handleParticipantUpdates = (participantInfos: ParticipantInfo[]) => {
     // handle changes to participant state, and send events
     participantInfos.forEach((info) => {
       if (info.sid === this.localParticipant.sid) {
@@ -204,7 +223,86 @@ class Room extends EventEmitter {
         remoteParticipant.updateInfo(info);
       }
     });
-  }
+  };
+
+  private handleSubscriptionUpdate = (tracks: SubscribedTrack[], attempt: number = 0) => {
+    const current: { [key: string]: SubscribedTrack } = {};
+    // build map of current tracks
+    tracks.forEach((track) => {
+      current[track.trackSid] = track;
+    });
+
+    // update removed tracks
+    this.subscribedTracks.forEach((track, sid) => {
+      if (current[sid]) {
+        return;
+      }
+      // delete from array and trigger unsubscribe
+      this.subscribedTracks.delete(sid);
+
+      const participant = this.participants.get(track.participantSid);
+      if (participant) {
+        participant.removeSubscribedMediaTrack(sid);
+      }
+    });
+
+    // add new tracks, if either metadata or transceiver isn't ready
+    // abort and retry later
+    let retryNeeded = false;
+    for (let i = 0; i < tracks.length; i += 1) {
+      const track = tracks[i];
+      const participant = this.participants.get(track.participantSid);
+      if (!participant) {
+        retryNeeded = true;
+        break;
+      }
+
+      const pub = participant.getTrackPublication(track.trackSid);
+      if (!pub) {
+        retryNeeded = true;
+        break;
+      }
+
+      let transceiver: RTCRtpTransceiver | undefined;
+      this.engine.subscriber?.pc.getTransceivers().forEach((item) => {
+        if (item.mid === track.mid) {
+          transceiver = item;
+        }
+      });
+
+      if (!transceiver || !transceiver.receiver.track) {
+        retryNeeded = true;
+        break;
+      }
+
+      // success, fire off
+      this.subscribedTracks.set(track.trackSid, track);
+      participant.addSubscribedMediaTrack(transceiver.receiver.track,
+        track.trackSid, transceiver.receiver);
+    }
+
+    if (retryNeeded) {
+      if (attempt > maxSubscribeAttempts) {
+        this.emit(RoomEvent.TrackSubscriptionFailed);
+        return;
+      }
+
+      if (this.subscriptionUpdateTimeout) {
+        clearTimeout(this.subscriptionUpdateTimeout);
+        this.subscriptionUpdateTimeout = undefined;
+      }
+
+      let delay = attempt * attempt * 100;
+      if (delay > 2000) {
+        delay = 2000;
+      }
+
+      // clear other updates and schedule this one
+      this.subscriptionUpdateTimeout = setTimeout(() => {
+        this.handleSubscriptionUpdate(tracks, attempt + 1);
+      }, delay);
+    }
+  };
 
   private handleParticipantDisconnected(
     sid: string,

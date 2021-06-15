@@ -1,16 +1,17 @@
 /* eslint-disable */
-import Long from 'long';
-import _m0 from 'protobufjs/minimal';
+import Long from "long";
+import _m0 from "protobufjs/minimal";
 import {
   TrackType,
   Room,
   ParticipantInfo,
   TrackInfo,
+  SubscribedTrack,
   trackTypeFromJSON,
   trackTypeToJSON,
-} from './livekit_models';
+} from "./livekit_models";
 
-export const protobufPackage = 'livekit';
+export const protobufPackage = "livekit";
 
 export enum SignalTarget {
   PUBLISHER = 0,
@@ -21,13 +22,13 @@ export enum SignalTarget {
 export function signalTargetFromJSON(object: any): SignalTarget {
   switch (object) {
     case 0:
-    case 'PUBLISHER':
+    case "PUBLISHER":
       return SignalTarget.PUBLISHER;
     case 1:
-    case 'SUBSCRIBER':
+    case "SUBSCRIBER":
       return SignalTarget.SUBSCRIBER;
     case -1:
-    case 'UNRECOGNIZED':
+    case "UNRECOGNIZED":
     default:
       return SignalTarget.UNRECOGNIZED;
   }
@@ -36,11 +37,11 @@ export function signalTargetFromJSON(object: any): SignalTarget {
 export function signalTargetToJSON(object: SignalTarget): string {
   switch (object) {
     case SignalTarget.PUBLISHER:
-      return 'PUBLISHER';
+      return "PUBLISHER";
     case SignalTarget.SUBSCRIBER:
-      return 'SUBSCRIBER';
+      return "SUBSCRIBER";
     default:
-      return 'UNKNOWN';
+      return "UNKNOWN";
   }
 }
 
@@ -54,16 +55,16 @@ export enum VideoQuality {
 export function videoQualityFromJSON(object: any): VideoQuality {
   switch (object) {
     case 0:
-    case 'LOW':
+    case "LOW":
       return VideoQuality.LOW;
     case 1:
-    case 'MEDIUM':
+    case "MEDIUM":
       return VideoQuality.MEDIUM;
     case 2:
-    case 'HIGH':
+    case "HIGH":
       return VideoQuality.HIGH;
     case -1:
-    case 'UNRECOGNIZED':
+    case "UNRECOGNIZED":
     default:
       return VideoQuality.UNRECOGNIZED;
   }
@@ -72,13 +73,13 @@ export function videoQualityFromJSON(object: any): VideoQuality {
 export function videoQualityToJSON(object: VideoQuality): string {
   switch (object) {
     case VideoQuality.LOW:
-      return 'LOW';
+      return "LOW";
     case VideoQuality.MEDIUM:
-      return 'MEDIUM';
+      return "MEDIUM";
     case VideoQuality.HIGH:
-      return 'HIGH';
+      return "HIGH";
     default:
-      return 'UNKNOWN';
+      return "UNKNOWN";
   }
 }
 
@@ -114,8 +115,10 @@ export interface SignalResponse {
   trackPublished?: TrackPublishedResponse | undefined;
   /** list of active speakers */
   speaker?: ActiveSpeakerUpdate | undefined;
-  /** Immediately terminate session */
+  /** immediately terminate session */
   leave?: LeaveRequest | undefined;
+  /** list of tracks the current participant is subscribed to */
+  subscription?: SubscriptionUpdate | undefined;
 }
 
 export interface AddTrackRequest {
@@ -144,6 +147,7 @@ export interface JoinResponse {
   otherParticipants: ParticipantInfo[];
   serverVersion: string;
   iceServers: ICEServer[];
+  protocolVersion: number;
 }
 
 export interface TrackPublishedResponse {
@@ -188,6 +192,10 @@ export interface UpdateTrackSettings {
 /** empty */
 export interface LeaveRequest {}
 
+export interface SubscriptionUpdate {
+  tracks: SubscribedTrack[];
+}
+
 export interface ICEServer {
   urls: string[];
   username: string;
@@ -210,13 +218,13 @@ export enum DataPacket_Kind {
 export function dataPacket_KindFromJSON(object: any): DataPacket_Kind {
   switch (object) {
     case 0:
-    case 'RELIABLE':
+    case "RELIABLE":
       return DataPacket_Kind.RELIABLE;
     case 1:
-    case 'LOSSY':
+    case "LOSSY":
       return DataPacket_Kind.LOSSY;
     case -1:
-    case 'UNRECOGNIZED':
+    case "UNRECOGNIZED":
     default:
       return DataPacket_Kind.UNRECOGNIZED;
   }
@@ -225,11 +233,11 @@ export function dataPacket_KindFromJSON(object: any): DataPacket_Kind {
 export function dataPacket_KindToJSON(object: DataPacket_Kind): string {
   switch (object) {
     case DataPacket_Kind.RELIABLE:
-      return 'RELIABLE';
+      return "RELIABLE";
     case DataPacket_Kind.LOSSY:
-      return 'LOSSY';
+      return "LOSSY";
     default:
-      return 'UNKNOWN';
+      return "UNKNOWN";
   }
 }
 
@@ -514,6 +522,12 @@ export const SignalResponse = {
     if (message.leave !== undefined) {
       LeaveRequest.encode(message.leave, writer.uint32(66).fork()).ldelim();
     }
+    if (message.subscription !== undefined) {
+      SubscriptionUpdate.encode(
+        message.subscription,
+        writer.uint32(74).fork()
+      ).ldelim();
+    }
     return writer;
   },
 
@@ -550,6 +564,12 @@ export const SignalResponse = {
           break;
         case 8:
           message.leave = LeaveRequest.decode(reader, reader.uint32());
+          break;
+        case 9:
+          message.subscription = SubscriptionUpdate.decode(
+            reader,
+            reader.uint32()
+          );
           break;
         default:
           reader.skipType(tag & 7);
@@ -603,6 +623,11 @@ export const SignalResponse = {
     } else {
       message.leave = undefined;
     }
+    if (object.subscription !== undefined && object.subscription !== null) {
+      message.subscription = SubscriptionUpdate.fromJSON(object.subscription);
+    } else {
+      message.subscription = undefined;
+    }
     return message;
   },
 
@@ -637,6 +662,10 @@ export const SignalResponse = {
     message.leave !== undefined &&
       (obj.leave = message.leave
         ? LeaveRequest.toJSON(message.leave)
+        : undefined);
+    message.subscription !== undefined &&
+      (obj.subscription = message.subscription
+        ? SubscriptionUpdate.toJSON(message.subscription)
         : undefined);
     return obj;
   },
@@ -685,21 +714,28 @@ export const SignalResponse = {
     } else {
       message.leave = undefined;
     }
+    if (object.subscription !== undefined && object.subscription !== null) {
+      message.subscription = SubscriptionUpdate.fromPartial(
+        object.subscription
+      );
+    } else {
+      message.subscription = undefined;
+    }
     return message;
   },
 };
 
-const baseAddTrackRequest: object = { cid: '', name: '', type: 0 };
+const baseAddTrackRequest: object = { cid: "", name: "", type: 0 };
 
 export const AddTrackRequest = {
   encode(
     message: AddTrackRequest,
     writer: _m0.Writer = _m0.Writer.create()
   ): _m0.Writer {
-    if (message.cid !== '') {
+    if (message.cid !== "") {
       writer.uint32(10).string(message.cid);
     }
-    if (message.name !== '') {
+    if (message.name !== "") {
       writer.uint32(18).string(message.name);
     }
     if (message.type !== 0) {
@@ -737,12 +773,12 @@ export const AddTrackRequest = {
     if (object.cid !== undefined && object.cid !== null) {
       message.cid = String(object.cid);
     } else {
-      message.cid = '';
+      message.cid = "";
     }
     if (object.name !== undefined && object.name !== null) {
       message.name = String(object.name);
     } else {
-      message.name = '';
+      message.name = "";
     }
     if (object.type !== undefined && object.type !== null) {
       message.type = trackTypeFromJSON(object.type);
@@ -765,12 +801,12 @@ export const AddTrackRequest = {
     if (object.cid !== undefined && object.cid !== null) {
       message.cid = object.cid;
     } else {
-      message.cid = '';
+      message.cid = "";
     }
     if (object.name !== undefined && object.name !== null) {
       message.name = object.name;
     } else {
-      message.name = '';
+      message.name = "";
     }
     if (object.type !== undefined && object.type !== null) {
       message.type = object.type;
@@ -781,14 +817,14 @@ export const AddTrackRequest = {
   },
 };
 
-const baseTrickleRequest: object = { candidateInit: '', target: 0 };
+const baseTrickleRequest: object = { candidateInit: "", target: 0 };
 
 export const TrickleRequest = {
   encode(
     message: TrickleRequest,
     writer: _m0.Writer = _m0.Writer.create()
   ): _m0.Writer {
-    if (message.candidateInit !== '') {
+    if (message.candidateInit !== "") {
       writer.uint32(10).string(message.candidateInit);
     }
     if (message.target !== 0) {
@@ -823,7 +859,7 @@ export const TrickleRequest = {
     if (object.candidateInit !== undefined && object.candidateInit !== null) {
       message.candidateInit = String(object.candidateInit);
     } else {
-      message.candidateInit = '';
+      message.candidateInit = "";
     }
     if (object.target !== undefined && object.target !== null) {
       message.target = signalTargetFromJSON(object.target);
@@ -847,7 +883,7 @@ export const TrickleRequest = {
     if (object.candidateInit !== undefined && object.candidateInit !== null) {
       message.candidateInit = object.candidateInit;
     } else {
-      message.candidateInit = '';
+      message.candidateInit = "";
     }
     if (object.target !== undefined && object.target !== null) {
       message.target = object.target;
@@ -858,14 +894,14 @@ export const TrickleRequest = {
   },
 };
 
-const baseMuteTrackRequest: object = { sid: '', muted: false };
+const baseMuteTrackRequest: object = { sid: "", muted: false };
 
 export const MuteTrackRequest = {
   encode(
     message: MuteTrackRequest,
     writer: _m0.Writer = _m0.Writer.create()
   ): _m0.Writer {
-    if (message.sid !== '') {
+    if (message.sid !== "") {
       writer.uint32(10).string(message.sid);
     }
     if (message.muted === true) {
@@ -900,7 +936,7 @@ export const MuteTrackRequest = {
     if (object.sid !== undefined && object.sid !== null) {
       message.sid = String(object.sid);
     } else {
-      message.sid = '';
+      message.sid = "";
     }
     if (object.muted !== undefined && object.muted !== null) {
       message.muted = Boolean(object.muted);
@@ -922,7 +958,7 @@ export const MuteTrackRequest = {
     if (object.sid !== undefined && object.sid !== null) {
       message.sid = object.sid;
     } else {
-      message.sid = '';
+      message.sid = "";
     }
     if (object.muted !== undefined && object.muted !== null) {
       message.muted = object.muted;
@@ -974,7 +1010,7 @@ export const NegotiationRequest = {
   },
 };
 
-const baseJoinResponse: object = { serverVersion: '' };
+const baseJoinResponse: object = { serverVersion: "", protocolVersion: 0 };
 
 export const JoinResponse = {
   encode(
@@ -993,11 +1029,14 @@ export const JoinResponse = {
     for (const v of message.otherParticipants) {
       ParticipantInfo.encode(v!, writer.uint32(26).fork()).ldelim();
     }
-    if (message.serverVersion !== '') {
+    if (message.serverVersion !== "") {
       writer.uint32(34).string(message.serverVersion);
     }
     for (const v of message.iceServers) {
       ICEServer.encode(v!, writer.uint32(42).fork()).ldelim();
+    }
+    if (message.protocolVersion !== 0) {
+      writer.uint32(48).uint32(message.protocolVersion);
     }
     return writer;
   },
@@ -1027,6 +1066,9 @@ export const JoinResponse = {
           break;
         case 5:
           message.iceServers.push(ICEServer.decode(reader, reader.uint32()));
+          break;
+        case 6:
+          message.protocolVersion = reader.uint32();
           break;
         default:
           reader.skipType(tag & 7);
@@ -1061,12 +1103,20 @@ export const JoinResponse = {
     if (object.serverVersion !== undefined && object.serverVersion !== null) {
       message.serverVersion = String(object.serverVersion);
     } else {
-      message.serverVersion = '';
+      message.serverVersion = "";
     }
     if (object.iceServers !== undefined && object.iceServers !== null) {
       for (const e of object.iceServers) {
         message.iceServers.push(ICEServer.fromJSON(e));
       }
+    }
+    if (
+      object.protocolVersion !== undefined &&
+      object.protocolVersion !== null
+    ) {
+      message.protocolVersion = Number(object.protocolVersion);
+    } else {
+      message.protocolVersion = 0;
     }
     return message;
   },
@@ -1095,6 +1145,8 @@ export const JoinResponse = {
     } else {
       obj.iceServers = [];
     }
+    message.protocolVersion !== undefined &&
+      (obj.protocolVersion = message.protocolVersion);
     return obj;
   },
 
@@ -1123,25 +1175,33 @@ export const JoinResponse = {
     if (object.serverVersion !== undefined && object.serverVersion !== null) {
       message.serverVersion = object.serverVersion;
     } else {
-      message.serverVersion = '';
+      message.serverVersion = "";
     }
     if (object.iceServers !== undefined && object.iceServers !== null) {
       for (const e of object.iceServers) {
         message.iceServers.push(ICEServer.fromPartial(e));
       }
     }
+    if (
+      object.protocolVersion !== undefined &&
+      object.protocolVersion !== null
+    ) {
+      message.protocolVersion = object.protocolVersion;
+    } else {
+      message.protocolVersion = 0;
+    }
     return message;
   },
 };
 
-const baseTrackPublishedResponse: object = { cid: '' };
+const baseTrackPublishedResponse: object = { cid: "" };
 
 export const TrackPublishedResponse = {
   encode(
     message: TrackPublishedResponse,
     writer: _m0.Writer = _m0.Writer.create()
   ): _m0.Writer {
-    if (message.cid !== '') {
+    if (message.cid !== "") {
       writer.uint32(10).string(message.cid);
     }
     if (message.track !== undefined) {
@@ -1179,7 +1239,7 @@ export const TrackPublishedResponse = {
     if (object.cid !== undefined && object.cid !== null) {
       message.cid = String(object.cid);
     } else {
-      message.cid = '';
+      message.cid = "";
     }
     if (object.track !== undefined && object.track !== null) {
       message.track = TrackInfo.fromJSON(object.track);
@@ -1204,7 +1264,7 @@ export const TrackPublishedResponse = {
     if (object.cid !== undefined && object.cid !== null) {
       message.cid = object.cid;
     } else {
-      message.cid = '';
+      message.cid = "";
     }
     if (object.track !== undefined && object.track !== null) {
       message.track = TrackInfo.fromPartial(object.track);
@@ -1215,17 +1275,17 @@ export const TrackPublishedResponse = {
   },
 };
 
-const baseSessionDescription: object = { type: '', sdp: '' };
+const baseSessionDescription: object = { type: "", sdp: "" };
 
 export const SessionDescription = {
   encode(
     message: SessionDescription,
     writer: _m0.Writer = _m0.Writer.create()
   ): _m0.Writer {
-    if (message.type !== '') {
+    if (message.type !== "") {
       writer.uint32(10).string(message.type);
     }
-    if (message.sdp !== '') {
+    if (message.sdp !== "") {
       writer.uint32(18).string(message.sdp);
     }
     return writer;
@@ -1257,12 +1317,12 @@ export const SessionDescription = {
     if (object.type !== undefined && object.type !== null) {
       message.type = String(object.type);
     } else {
-      message.type = '';
+      message.type = "";
     }
     if (object.sdp !== undefined && object.sdp !== null) {
       message.sdp = String(object.sdp);
     } else {
-      message.sdp = '';
+      message.sdp = "";
     }
     return message;
   },
@@ -1279,12 +1339,12 @@ export const SessionDescription = {
     if (object.type !== undefined && object.type !== null) {
       message.type = object.type;
     } else {
-      message.type = '';
+      message.type = "";
     }
     if (object.sdp !== undefined && object.sdp !== null) {
       message.sdp = object.sdp;
     } else {
-      message.sdp = '';
+      message.sdp = "";
     }
     return message;
   },
@@ -1426,14 +1486,14 @@ export const ActiveSpeakerUpdate = {
   },
 };
 
-const baseSpeakerInfo: object = { sid: '', level: 0, active: false };
+const baseSpeakerInfo: object = { sid: "", level: 0, active: false };
 
 export const SpeakerInfo = {
   encode(
     message: SpeakerInfo,
     writer: _m0.Writer = _m0.Writer.create()
   ): _m0.Writer {
-    if (message.sid !== '') {
+    if (message.sid !== "") {
       writer.uint32(10).string(message.sid);
     }
     if (message.level !== 0) {
@@ -1474,7 +1534,7 @@ export const SpeakerInfo = {
     if (object.sid !== undefined && object.sid !== null) {
       message.sid = String(object.sid);
     } else {
-      message.sid = '';
+      message.sid = "";
     }
     if (object.level !== undefined && object.level !== null) {
       message.level = Number(object.level);
@@ -1502,7 +1562,7 @@ export const SpeakerInfo = {
     if (object.sid !== undefined && object.sid !== null) {
       message.sid = object.sid;
     } else {
-      message.sid = '';
+      message.sid = "";
     }
     if (object.level !== undefined && object.level !== null) {
       message.level = object.level;
@@ -1519,7 +1579,7 @@ export const SpeakerInfo = {
 };
 
 const baseUpdateSubscription: object = {
-  trackSids: '',
+  trackSids: "",
   subscribe: false,
   quality: 0,
 };
@@ -1623,7 +1683,7 @@ export const UpdateSubscription = {
 };
 
 const baseUpdateTrackSettings: object = {
-  trackSids: '',
+  trackSids: "",
   disabled: false,
   quality: 0,
 };
@@ -1767,7 +1827,74 @@ export const LeaveRequest = {
   },
 };
 
-const baseICEServer: object = { urls: '', username: '', credential: '' };
+const baseSubscriptionUpdate: object = {};
+
+export const SubscriptionUpdate = {
+  encode(
+    message: SubscriptionUpdate,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    for (const v of message.tracks) {
+      SubscribedTrack.encode(v!, writer.uint32(10).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SubscriptionUpdate {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = { ...baseSubscriptionUpdate } as SubscriptionUpdate;
+    message.tracks = [];
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.tracks.push(SubscribedTrack.decode(reader, reader.uint32()));
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SubscriptionUpdate {
+    const message = { ...baseSubscriptionUpdate } as SubscriptionUpdate;
+    message.tracks = [];
+    if (object.tracks !== undefined && object.tracks !== null) {
+      for (const e of object.tracks) {
+        message.tracks.push(SubscribedTrack.fromJSON(e));
+      }
+    }
+    return message;
+  },
+
+  toJSON(message: SubscriptionUpdate): unknown {
+    const obj: any = {};
+    if (message.tracks) {
+      obj.tracks = message.tracks.map((e) =>
+        e ? SubscribedTrack.toJSON(e) : undefined
+      );
+    } else {
+      obj.tracks = [];
+    }
+    return obj;
+  },
+
+  fromPartial(object: DeepPartial<SubscriptionUpdate>): SubscriptionUpdate {
+    const message = { ...baseSubscriptionUpdate } as SubscriptionUpdate;
+    message.tracks = [];
+    if (object.tracks !== undefined && object.tracks !== null) {
+      for (const e of object.tracks) {
+        message.tracks.push(SubscribedTrack.fromPartial(e));
+      }
+    }
+    return message;
+  },
+};
+
+const baseICEServer: object = { urls: "", username: "", credential: "" };
 
 export const ICEServer = {
   encode(
@@ -1777,10 +1904,10 @@ export const ICEServer = {
     for (const v of message.urls) {
       writer.uint32(10).string(v!);
     }
-    if (message.username !== '') {
+    if (message.username !== "") {
       writer.uint32(18).string(message.username);
     }
-    if (message.credential !== '') {
+    if (message.credential !== "") {
       writer.uint32(26).string(message.credential);
     }
     return writer;
@@ -1822,12 +1949,12 @@ export const ICEServer = {
     if (object.username !== undefined && object.username !== null) {
       message.username = String(object.username);
     } else {
-      message.username = '';
+      message.username = "";
     }
     if (object.credential !== undefined && object.credential !== null) {
       message.credential = String(object.credential);
     } else {
-      message.credential = '';
+      message.credential = "";
     }
     return message;
   },
@@ -1855,12 +1982,12 @@ export const ICEServer = {
     if (object.username !== undefined && object.username !== null) {
       message.username = object.username;
     } else {
-      message.username = '';
+      message.username = "";
     }
     if (object.credential !== undefined && object.credential !== null) {
       message.credential = object.credential;
     } else {
-      message.credential = '';
+      message.credential = "";
     }
     return message;
   },
@@ -1966,14 +2093,14 @@ export const DataPacket = {
   },
 };
 
-const baseUserPacket: object = { participantSid: '', destinationSids: '' };
+const baseUserPacket: object = { participantSid: "", destinationSids: "" };
 
 export const UserPacket = {
   encode(
     message: UserPacket,
     writer: _m0.Writer = _m0.Writer.create()
   ): _m0.Writer {
-    if (message.participantSid !== '') {
+    if (message.participantSid !== "") {
       writer.uint32(10).string(message.participantSid);
     }
     if (message.payload.length !== 0) {
@@ -2018,7 +2145,7 @@ export const UserPacket = {
     if (object.participantSid !== undefined && object.participantSid !== null) {
       message.participantSid = String(object.participantSid);
     } else {
-      message.participantSid = '';
+      message.participantSid = "";
     }
     if (object.payload !== undefined && object.payload !== null) {
       message.payload = bytesFromBase64(object.payload);
@@ -2056,7 +2183,7 @@ export const UserPacket = {
     if (object.participantSid !== undefined && object.participantSid !== null) {
       message.participantSid = object.participantSid;
     } else {
-      message.participantSid = '';
+      message.participantSid = "";
     }
     if (object.payload !== undefined && object.payload !== null) {
       message.payload = object.payload;
@@ -2078,16 +2205,16 @@ export const UserPacket = {
 declare var self: any | undefined;
 declare var window: any | undefined;
 var globalThis: any = (() => {
-  if (typeof globalThis !== 'undefined') return globalThis;
-  if (typeof self !== 'undefined') return self;
-  if (typeof window !== 'undefined') return window;
-  if (typeof global !== 'undefined') return global;
-  throw 'Unable to locate global object';
+  if (typeof globalThis !== "undefined") return globalThis;
+  if (typeof self !== "undefined") return self;
+  if (typeof window !== "undefined") return window;
+  if (typeof global !== "undefined") return global;
+  throw "Unable to locate global object";
 })();
 
 const atob: (b64: string) => string =
   globalThis.atob ||
-  ((b64) => globalThis.Buffer.from(b64, 'base64').toString('binary'));
+  ((b64) => globalThis.Buffer.from(b64, "base64").toString("binary"));
 function bytesFromBase64(b64: string): Uint8Array {
   const bin = atob(b64);
   const arr = new Uint8Array(bin.length);
@@ -2099,13 +2226,13 @@ function bytesFromBase64(b64: string): Uint8Array {
 
 const btoa: (bin: string) => string =
   globalThis.btoa ||
-  ((bin) => globalThis.Buffer.from(bin, 'binary').toString('base64'));
+  ((bin) => globalThis.Buffer.from(bin, "binary").toString("base64"));
 function base64FromBytes(arr: Uint8Array): string {
   const bin: string[] = [];
   for (let i = 0; i < arr.byteLength; ++i) {
     bin.push(String.fromCharCode(arr[i]));
   }
-  return btoa(bin.join(''));
+  return btoa(bin.join(""));
 }
 
 type Builtin = Date | Function | Uint8Array | string | number | undefined;

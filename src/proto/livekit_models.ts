@@ -1,8 +1,8 @@
 /* eslint-disable */
-import Long from 'long';
-import _m0 from 'protobufjs/minimal';
+import Long from "long";
+import _m0 from "protobufjs/minimal";
 
-export const protobufPackage = 'livekit';
+export const protobufPackage = "livekit";
 
 export enum TrackType {
   AUDIO = 0,
@@ -14,16 +14,16 @@ export enum TrackType {
 export function trackTypeFromJSON(object: any): TrackType {
   switch (object) {
     case 0:
-    case 'AUDIO':
+    case "AUDIO":
       return TrackType.AUDIO;
     case 1:
-    case 'VIDEO':
+    case "VIDEO":
       return TrackType.VIDEO;
     case 2:
-    case 'DATA':
+    case "DATA":
       return TrackType.DATA;
     case -1:
-    case 'UNRECOGNIZED':
+    case "UNRECOGNIZED":
     default:
       return TrackType.UNRECOGNIZED;
   }
@@ -32,13 +32,13 @@ export function trackTypeFromJSON(object: any): TrackType {
 export function trackTypeToJSON(object: TrackType): string {
   switch (object) {
     case TrackType.AUDIO:
-      return 'AUDIO';
+      return "AUDIO";
     case TrackType.VIDEO:
-      return 'VIDEO';
+      return "VIDEO";
     case TrackType.DATA:
-      return 'DATA';
+      return "DATA";
     default:
-      return 'UNKNOWN';
+      return "UNKNOWN";
   }
 }
 
@@ -78,19 +78,19 @@ export function participantInfo_StateFromJSON(
 ): ParticipantInfo_State {
   switch (object) {
     case 0:
-    case 'JOINING':
+    case "JOINING":
       return ParticipantInfo_State.JOINING;
     case 1:
-    case 'JOINED':
+    case "JOINED":
       return ParticipantInfo_State.JOINED;
     case 2:
-    case 'ACTIVE':
+    case "ACTIVE":
       return ParticipantInfo_State.ACTIVE;
     case 3:
-    case 'DISCONNECTED':
+    case "DISCONNECTED":
       return ParticipantInfo_State.DISCONNECTED;
     case -1:
-    case 'UNRECOGNIZED':
+    case "UNRECOGNIZED":
     default:
       return ParticipantInfo_State.UNRECOGNIZED;
   }
@@ -101,15 +101,15 @@ export function participantInfo_StateToJSON(
 ): string {
   switch (object) {
     case ParticipantInfo_State.JOINING:
-      return 'JOINING';
+      return "JOINING";
     case ParticipantInfo_State.JOINED:
-      return 'JOINED';
+      return "JOINED";
     case ParticipantInfo_State.ACTIVE:
-      return 'ACTIVE';
+      return "ACTIVE";
     case ParticipantInfo_State.DISCONNECTED:
-      return 'DISCONNECTED';
+      return "DISCONNECTED";
     default:
-      return 'UNKNOWN';
+      return "UNKNOWN";
   }
 }
 
@@ -120,6 +120,13 @@ export interface TrackInfo {
   muted: boolean;
 }
 
+/** mapping of a MID from the server to a published track */
+export interface SubscribedTrack {
+  mid: string;
+  trackSid: string;
+  participantSid: string;
+}
+
 /** old DataTrack message */
 export interface DataMessage {
   text: string | undefined;
@@ -127,20 +134,20 @@ export interface DataMessage {
 }
 
 const baseRoom: object = {
-  sid: '',
-  name: '',
+  sid: "",
+  name: "",
   emptyTimeout: 0,
   maxParticipants: 0,
   creationTime: 0,
-  turnPassword: '',
+  turnPassword: "",
 };
 
 export const Room = {
   encode(message: Room, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.sid !== '') {
+    if (message.sid !== "") {
       writer.uint32(10).string(message.sid);
     }
-    if (message.name !== '') {
+    if (message.name !== "") {
       writer.uint32(18).string(message.name);
     }
     if (message.emptyTimeout !== 0) {
@@ -152,7 +159,7 @@ export const Room = {
     if (message.creationTime !== 0) {
       writer.uint32(40).int64(message.creationTime);
     }
-    if (message.turnPassword !== '') {
+    if (message.turnPassword !== "") {
       writer.uint32(50).string(message.turnPassword);
     }
     return writer;
@@ -196,12 +203,12 @@ export const Room = {
     if (object.sid !== undefined && object.sid !== null) {
       message.sid = String(object.sid);
     } else {
-      message.sid = '';
+      message.sid = "";
     }
     if (object.name !== undefined && object.name !== null) {
       message.name = String(object.name);
     } else {
-      message.name = '';
+      message.name = "";
     }
     if (object.emptyTimeout !== undefined && object.emptyTimeout !== null) {
       message.emptyTimeout = Number(object.emptyTimeout);
@@ -224,7 +231,7 @@ export const Room = {
     if (object.turnPassword !== undefined && object.turnPassword !== null) {
       message.turnPassword = String(object.turnPassword);
     } else {
-      message.turnPassword = '';
+      message.turnPassword = "";
     }
     return message;
   },
@@ -249,12 +256,12 @@ export const Room = {
     if (object.sid !== undefined && object.sid !== null) {
       message.sid = object.sid;
     } else {
-      message.sid = '';
+      message.sid = "";
     }
     if (object.name !== undefined && object.name !== null) {
       message.name = object.name;
     } else {
-      message.name = '';
+      message.name = "";
     }
     if (object.emptyTimeout !== undefined && object.emptyTimeout !== null) {
       message.emptyTimeout = object.emptyTimeout;
@@ -277,17 +284,17 @@ export const Room = {
     if (object.turnPassword !== undefined && object.turnPassword !== null) {
       message.turnPassword = object.turnPassword;
     } else {
-      message.turnPassword = '';
+      message.turnPassword = "";
     }
     return message;
   },
 };
 
 const baseParticipantInfo: object = {
-  sid: '',
-  identity: '',
+  sid: "",
+  identity: "",
   state: 0,
-  metadata: '',
+  metadata: "",
   joinedAt: 0,
 };
 
@@ -296,10 +303,10 @@ export const ParticipantInfo = {
     message: ParticipantInfo,
     writer: _m0.Writer = _m0.Writer.create()
   ): _m0.Writer {
-    if (message.sid !== '') {
+    if (message.sid !== "") {
       writer.uint32(10).string(message.sid);
     }
-    if (message.identity !== '') {
+    if (message.identity !== "") {
       writer.uint32(18).string(message.identity);
     }
     if (message.state !== 0) {
@@ -308,7 +315,7 @@ export const ParticipantInfo = {
     for (const v of message.tracks) {
       TrackInfo.encode(v!, writer.uint32(34).fork()).ldelim();
     }
-    if (message.metadata !== '') {
+    if (message.metadata !== "") {
       writer.uint32(42).string(message.metadata);
     }
     if (message.joinedAt !== 0) {
@@ -357,12 +364,12 @@ export const ParticipantInfo = {
     if (object.sid !== undefined && object.sid !== null) {
       message.sid = String(object.sid);
     } else {
-      message.sid = '';
+      message.sid = "";
     }
     if (object.identity !== undefined && object.identity !== null) {
       message.identity = String(object.identity);
     } else {
-      message.identity = '';
+      message.identity = "";
     }
     if (object.state !== undefined && object.state !== null) {
       message.state = participantInfo_StateFromJSON(object.state);
@@ -377,7 +384,7 @@ export const ParticipantInfo = {
     if (object.metadata !== undefined && object.metadata !== null) {
       message.metadata = String(object.metadata);
     } else {
-      message.metadata = '';
+      message.metadata = "";
     }
     if (object.joinedAt !== undefined && object.joinedAt !== null) {
       message.joinedAt = Number(object.joinedAt);
@@ -411,12 +418,12 @@ export const ParticipantInfo = {
     if (object.sid !== undefined && object.sid !== null) {
       message.sid = object.sid;
     } else {
-      message.sid = '';
+      message.sid = "";
     }
     if (object.identity !== undefined && object.identity !== null) {
       message.identity = object.identity;
     } else {
-      message.identity = '';
+      message.identity = "";
     }
     if (object.state !== undefined && object.state !== null) {
       message.state = object.state;
@@ -431,7 +438,7 @@ export const ParticipantInfo = {
     if (object.metadata !== undefined && object.metadata !== null) {
       message.metadata = object.metadata;
     } else {
-      message.metadata = '';
+      message.metadata = "";
     }
     if (object.joinedAt !== undefined && object.joinedAt !== null) {
       message.joinedAt = object.joinedAt;
@@ -442,20 +449,20 @@ export const ParticipantInfo = {
   },
 };
 
-const baseTrackInfo: object = { sid: '', type: 0, name: '', muted: false };
+const baseTrackInfo: object = { sid: "", type: 0, name: "", muted: false };
 
 export const TrackInfo = {
   encode(
     message: TrackInfo,
     writer: _m0.Writer = _m0.Writer.create()
   ): _m0.Writer {
-    if (message.sid !== '') {
+    if (message.sid !== "") {
       writer.uint32(10).string(message.sid);
     }
     if (message.type !== 0) {
       writer.uint32(16).int32(message.type);
     }
-    if (message.name !== '') {
+    if (message.name !== "") {
       writer.uint32(26).string(message.name);
     }
     if (message.muted === true) {
@@ -496,7 +503,7 @@ export const TrackInfo = {
     if (object.sid !== undefined && object.sid !== null) {
       message.sid = String(object.sid);
     } else {
-      message.sid = '';
+      message.sid = "";
     }
     if (object.type !== undefined && object.type !== null) {
       message.type = trackTypeFromJSON(object.type);
@@ -506,7 +513,7 @@ export const TrackInfo = {
     if (object.name !== undefined && object.name !== null) {
       message.name = String(object.name);
     } else {
-      message.name = '';
+      message.name = "";
     }
     if (object.muted !== undefined && object.muted !== null) {
       message.muted = Boolean(object.muted);
@@ -530,7 +537,7 @@ export const TrackInfo = {
     if (object.sid !== undefined && object.sid !== null) {
       message.sid = object.sid;
     } else {
-      message.sid = '';
+      message.sid = "";
     }
     if (object.type !== undefined && object.type !== null) {
       message.type = object.type;
@@ -540,12 +547,109 @@ export const TrackInfo = {
     if (object.name !== undefined && object.name !== null) {
       message.name = object.name;
     } else {
-      message.name = '';
+      message.name = "";
     }
     if (object.muted !== undefined && object.muted !== null) {
       message.muted = object.muted;
     } else {
       message.muted = false;
+    }
+    return message;
+  },
+};
+
+const baseSubscribedTrack: object = {
+  mid: "",
+  trackSid: "",
+  participantSid: "",
+};
+
+export const SubscribedTrack = {
+  encode(
+    message: SubscribedTrack,
+    writer: _m0.Writer = _m0.Writer.create()
+  ): _m0.Writer {
+    if (message.mid !== "") {
+      writer.uint32(10).string(message.mid);
+    }
+    if (message.trackSid !== "") {
+      writer.uint32(18).string(message.trackSid);
+    }
+    if (message.participantSid !== "") {
+      writer.uint32(26).string(message.participantSid);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SubscribedTrack {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = { ...baseSubscribedTrack } as SubscribedTrack;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.mid = reader.string();
+          break;
+        case 2:
+          message.trackSid = reader.string();
+          break;
+        case 3:
+          message.participantSid = reader.string();
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SubscribedTrack {
+    const message = { ...baseSubscribedTrack } as SubscribedTrack;
+    if (object.mid !== undefined && object.mid !== null) {
+      message.mid = String(object.mid);
+    } else {
+      message.mid = "";
+    }
+    if (object.trackSid !== undefined && object.trackSid !== null) {
+      message.trackSid = String(object.trackSid);
+    } else {
+      message.trackSid = "";
+    }
+    if (object.participantSid !== undefined && object.participantSid !== null) {
+      message.participantSid = String(object.participantSid);
+    } else {
+      message.participantSid = "";
+    }
+    return message;
+  },
+
+  toJSON(message: SubscribedTrack): unknown {
+    const obj: any = {};
+    message.mid !== undefined && (obj.mid = message.mid);
+    message.trackSid !== undefined && (obj.trackSid = message.trackSid);
+    message.participantSid !== undefined &&
+      (obj.participantSid = message.participantSid);
+    return obj;
+  },
+
+  fromPartial(object: DeepPartial<SubscribedTrack>): SubscribedTrack {
+    const message = { ...baseSubscribedTrack } as SubscribedTrack;
+    if (object.mid !== undefined && object.mid !== null) {
+      message.mid = object.mid;
+    } else {
+      message.mid = "";
+    }
+    if (object.trackSid !== undefined && object.trackSid !== null) {
+      message.trackSid = object.trackSid;
+    } else {
+      message.trackSid = "";
+    }
+    if (object.participantSid !== undefined && object.participantSid !== null) {
+      message.participantSid = object.participantSid;
+    } else {
+      message.participantSid = "";
     }
     return message;
   },
@@ -631,16 +735,16 @@ export const DataMessage = {
 declare var self: any | undefined;
 declare var window: any | undefined;
 var globalThis: any = (() => {
-  if (typeof globalThis !== 'undefined') return globalThis;
-  if (typeof self !== 'undefined') return self;
-  if (typeof window !== 'undefined') return window;
-  if (typeof global !== 'undefined') return global;
-  throw 'Unable to locate global object';
+  if (typeof globalThis !== "undefined") return globalThis;
+  if (typeof self !== "undefined") return self;
+  if (typeof window !== "undefined") return window;
+  if (typeof global !== "undefined") return global;
+  throw "Unable to locate global object";
 })();
 
 const atob: (b64: string) => string =
   globalThis.atob ||
-  ((b64) => globalThis.Buffer.from(b64, 'base64').toString('binary'));
+  ((b64) => globalThis.Buffer.from(b64, "base64").toString("binary"));
 function bytesFromBase64(b64: string): Uint8Array {
   const bin = atob(b64);
   const arr = new Uint8Array(bin.length);
@@ -652,13 +756,13 @@ function bytesFromBase64(b64: string): Uint8Array {
 
 const btoa: (bin: string) => string =
   globalThis.btoa ||
-  ((bin) => globalThis.Buffer.from(bin, 'binary').toString('base64'));
+  ((bin) => globalThis.Buffer.from(bin, "binary").toString("base64"));
 function base64FromBytes(arr: Uint8Array): string {
   const bin: string[] = [];
   for (let i = 0; i < arr.byteLength; ++i) {
     bin.push(String.fromCharCode(arr[i]));
   }
-  return btoa(bin.join(''));
+  return btoa(bin.join(""));
 }
 
 type Builtin = Date | Function | Uint8Array | string | number | undefined;
@@ -674,7 +778,7 @@ export type DeepPartial<T> = T extends Builtin
 
 function longToNumber(long: Long): number {
   if (long.gt(Number.MAX_SAFE_INTEGER)) {
-    throw new globalThis.Error('Value is larger than Number.MAX_SAFE_INTEGER');
+    throw new globalThis.Error("Value is larger than Number.MAX_SAFE_INTEGER");
   }
   return long.toNumber();
 }

@@ -257,6 +257,10 @@ export default class RTCEngine extends EventEmitter {
       this.emit(EngineEvent.ParticipantUpdate, updates);
     };
 
+    this.client.onSubscriptionUpdate = (tracks) => {
+      this.emit(EngineEvent.SubscriptionUpdate, tracks);
+    };
+
     this.client.onLocalTrackPublished = (res: TrackPublishedResponse) => {
       const resolve = this.pendingTrackResolvers[res.cid];
       if (!resolve) {
